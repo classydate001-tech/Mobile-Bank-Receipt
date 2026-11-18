@@ -31,7 +31,7 @@ const IS_PERSISTENT = DATA_DIR === '/data';
    CORS — explicit allowlist + guaranteed OPTIONS handler.
    ═══════════════════════════════════════════════════════════════ */
 const ALLOWED_ORIGINS = [
-  'https://stanbic-mobile-receipt-production.up.railway.app',
+  'https://mobile-bank-receipt-production.up.railway.app',
   'http://localhost:3000',
   'http://localhost:5173'
 ];
